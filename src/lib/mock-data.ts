@@ -1,0 +1,140 @@
+import { ExecutionRequest, Approval, DashboardStats, User } from '@/types/execution';
+
+export const mockUser: User = {
+  id: 'user-1',
+  name: 'Ahmed Al Mansouri',
+  email: 'ahmed.mansouri@bank.ae',
+  role: 'ADMIN',
+};
+
+export const mockApprovers: User[] = [
+  {
+    id: 'approver-1',
+    name: 'Sarah Johnson',
+    email: 'sarah.johnson@bank.ae',
+    role: 'APPROVER',
+  },
+  {
+    id: 'approver-2',
+    name: 'Michael Chen',
+    email: 'michael.chen@bank.ae',
+    role: 'APPROVER',
+  },
+];
+
+export const mockExecutions: ExecutionRequest[] = [
+  {
+    id: 'EX-2024-001',
+    fiatAmount: 500000,
+    fiatCurrency: 'EUR',
+    targetAsset: 'USDT',
+    status: 'PENDING_APPROVAL',
+    initiatorId: 'user-1',
+    initiatorName: 'Ahmed Al Mansouri',
+    binanceAccountRef: 'BN-CORP-001',
+    coreWalletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f7BBBB',
+    internalReference: 'TREAS-2024-Q4-001',
+    notes: 'Treasury allocation for Q4 reserves',
+    createdAt: '2024-12-21T10:30:00Z',
+    updatedAt: '2024-12-21T10:30:00Z',
+  },
+  {
+    id: 'EX-2024-002',
+    fiatAmount: 250000,
+    fiatCurrency: 'USD',
+    targetAsset: 'USDT',
+    status: 'APPROVED',
+    initiatorId: 'user-1',
+    initiatorName: 'Ahmed Al Mansouri',
+    binanceAccountRef: 'BN-CORP-001',
+    coreWalletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f7BBBB',
+    internalReference: 'HEDGE-2024-012',
+    createdAt: '2024-12-20T14:15:00Z',
+    updatedAt: '2024-12-21T09:00:00Z',
+  },
+  {
+    id: 'EX-2024-003',
+    fiatAmount: 1000000,
+    fiatCurrency: 'EUR',
+    targetAsset: 'USDT',
+    status: 'FIAT_RECEIVED',
+    initiatorId: 'user-1',
+    initiatorName: 'Ahmed Al Mansouri',
+    binanceAccountRef: 'BN-CORP-002',
+    coreWalletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f7BBBB',
+    internalReference: 'INST-PAY-001',
+    notes: 'Institutional payment processing',
+    createdAt: '2024-12-19T08:00:00Z',
+    updatedAt: '2024-12-20T16:30:00Z',
+  },
+  {
+    id: 'EX-2024-004',
+    fiatAmount: 750000,
+    fiatCurrency: 'USD',
+    targetAsset: 'USDT',
+    status: 'CONVERTED',
+    initiatorId: 'user-1',
+    initiatorName: 'Ahmed Al Mansouri',
+    binanceAccountRef: 'BN-CORP-001',
+    coreWalletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f7BBBB',
+    createdAt: '2024-12-18T11:20:00Z',
+    updatedAt: '2024-12-19T14:45:00Z',
+  },
+  {
+    id: 'EX-2024-005',
+    fiatAmount: 2000000,
+    fiatCurrency: 'EUR',
+    targetAsset: 'USDT',
+    status: 'SETTLED',
+    initiatorId: 'user-1',
+    initiatorName: 'Ahmed Al Mansouri',
+    binanceAccountRef: 'BN-CORP-001',
+    coreWalletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f7BBBB',
+    internalReference: 'MAJOR-001',
+    notes: 'Major institutional transfer',
+    createdAt: '2024-12-15T09:00:00Z',
+    updatedAt: '2024-12-17T18:00:00Z',
+  },
+];
+
+export const mockApprovals: Approval[] = [
+  {
+    id: 'APR-001',
+    requestId: 'EX-2024-002',
+    approverId: 'approver-1',
+    approverName: 'Sarah Johnson',
+    decision: 'APPROVED',
+    timestamp: '2024-12-20T16:00:00Z',
+  },
+  {
+    id: 'APR-002',
+    requestId: 'EX-2024-002',
+    approverId: 'approver-2',
+    approverName: 'Michael Chen',
+    decision: 'APPROVED',
+    timestamp: '2024-12-21T09:00:00Z',
+  },
+  {
+    id: 'APR-003',
+    requestId: 'EX-2024-003',
+    approverId: 'approver-1',
+    approverName: 'Sarah Johnson',
+    decision: 'APPROVED',
+    timestamp: '2024-12-19T10:00:00Z',
+  },
+  {
+    id: 'APR-004',
+    requestId: 'EX-2024-003',
+    approverId: 'approver-2',
+    approverName: 'Michael Chen',
+    decision: 'APPROVED',
+    timestamp: '2024-12-19T11:30:00Z',
+  },
+];
+
+export const mockStats: DashboardStats = {
+  totalExecutions: 47,
+  pendingApprovals: 3,
+  totalVolume: 15750000,
+  settledToday: 2500000,
+};
