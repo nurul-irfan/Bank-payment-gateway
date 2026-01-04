@@ -3,11 +3,20 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, ArrowRight, Eye, EyeOff, Loader2, UserPlus, Info } from "lucide-react";
+import {
+  Shield,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Loader2,
+  UserPlus,
+  Info,
+} from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
+import { useAdminLogin } from "@/queries/auth.mutations";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,11 +35,13 @@ const Login = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { signIn, signUp, user, loading: authLoading } = useAuth();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [requires2FA, setRequires2FA] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
+  const loginMutation = useAdminLogin();
+
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
@@ -46,7 +57,9 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !authLoading) {
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+      const from =
+        (location.state as { from?: { pathname: string } })?.from?.pathname ||
+        "/";
       navigate(from, { replace: true });
     }
   }, [user, authLoading, navigate, location]);
@@ -60,7 +73,8 @@ const Login = () => {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
         err.errors.forEach((error) => {
-          if (error.path[0]) fieldErrors[error.path[0] as string] = error.message;
+          if (error.path[0])
+            fieldErrors[error.path[0] as string] = error.message;
         });
         setErrors(fieldErrors);
       }
@@ -77,7 +91,8 @@ const Login = () => {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
         err.errors.forEach((error) => {
-          if (error.path[0]) fieldErrors[error.path[0] as string] = error.message;
+          if (error.path[0])
+            fieldErrors[error.path[0] as string] = error.message;
         });
         setErrors(fieldErrors);
       }
@@ -85,59 +100,97 @@ const Login = () => {
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // const handleLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   if (!validateForm()) return;
+
+  //   setLoading(true);
+
+  //   try {
+  //     const { error, requires2FA: needs2FA } = await signIn(credentials.email, credentials.password);
+
+  //     if (error) {
+  //       let errorMessage = "Invalid credentials. Please try again.";
+
+  //       if (error.message.includes("Invalid login credentials")) {
+  //         errorMessage = "Invalid email or password.";
+  //       } else if (error.message.includes("Email not confirmed")) {
+  //         errorMessage = "Please confirm your email before logging in.";
+  //       }
+
+  //       toast({
+  //         title: "Login Failed",
+  //         description: errorMessage,
+  //         variant: "destructive",
+  //       });
+  //       return;
+  //     }
+
+  //     if (needs2FA) {
+  //       setRequires2FA(true);
+  //       return;
+  //     }
+
+  //     toast({
+  //       title: "Welcome Back",
+  //       description: "Successfully logged in to CryptoExec Platform.",
+  //     });
+
+  //     const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
+  //     navigate(from, { replace: true });
+  //   } catch (err) {
+  //     toast({
+  //       title: "Error",
+  //       description: "An unexpected error occurred. Please try again.",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
-    setLoading(true);
+    loginMutation.mutate(
+      {
+        email: credentials.email,
+        password: credentials.password,
+      },
+      {
+        onSuccess: (data) => {
+          // ✅ Save token
+          // localStorage.setItem("token", data.token);
 
-    try {
-      const { error, requires2FA: needs2FA } = await signIn(credentials.email, credentials.password);
+          toast({
+            title: "Welcome Back",
+            description: "Successfully logged in to CryptoExec Platform.",
+          });
 
-      if (error) {
-        let errorMessage = "Invalid credentials. Please try again.";
-        
-        if (error.message.includes("Invalid login credentials")) {
-          errorMessage = "Invalid email or password.";
-        } else if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please confirm your email before logging in.";
-        }
+          const from =
+            (location.state as { from?: { pathname: string } })?.from
+              ?.pathname || "/";
 
-        toast({
-          title: "Login Failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
+          navigate(from, { replace: true });
+        },
+
+        onError: (error: any) => {
+          toast({
+            title: "Login Failed",
+            description:
+              error?.response?.data?.message || "Invalid email or password.",
+            variant: "destructive",
+          });
+        },
       }
-
-      if (needs2FA) {
-        setRequires2FA(true);
-        return;
-      }
-
-      toast({
-        title: "Welcome Back",
-        description: "Successfully logged in to CryptoExec Platform.",
-      });
-
-      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
-      navigate(from, { replace: true });
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateSignupForm()) return;
 
     setLoading(true);
@@ -152,7 +205,7 @@ const Login = () => {
 
       if (error) {
         let errorMessage = error.message;
-        
+
         if (error.message.includes("already registered")) {
           errorMessage = "This email is already registered. Please sign in.";
         }
@@ -167,7 +220,8 @@ const Login = () => {
 
       toast({
         title: "Account Created",
-        description: "Your account has been created. You can now sign in with demo credentials.",
+        description:
+          "Your account has been created. You can now sign in with demo credentials.",
       });
       setIsSignup(false);
       setCredentials({ email: "admin@cryptoexec.com", password: "" });
@@ -205,7 +259,7 @@ const Login = () => {
           <div className="absolute top-20 left-20 w-96 h-96 bg-accent rounded-full blur-3xl" />
           <div className="absolute bottom-20 right-20 w-64 h-64 bg-primary-foreground rounded-full blur-2xl" />
         </div>
-        
+
         <div className="relative z-10 flex flex-col justify-center px-16 text-primary-foreground">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center shadow-gold">
@@ -216,24 +270,34 @@ const Login = () => {
               <p className="text-primary-foreground/70">Execution Platform</p>
             </div>
           </div>
-          
+
           <h2 className="text-4xl font-heading font-bold leading-tight mb-6">
-            Secure Bank to Crypto<br />Execution Workflow
+            Secure Bank to Crypto
+            <br />
+            Execution Workflow
           </h2>
-          
+
           <p className="text-lg text-primary-foreground/80 max-w-md">
-            Enterprise-grade fiat to crypto conversion with dual-approval workflows, 
-            complete audit trails, and automated settlement.
+            Enterprise-grade fiat to crypto conversion with dual-approval
+            workflows, complete audit trails, and automated settlement.
           </p>
 
           <div className="mt-12 grid grid-cols-3 gap-8">
             <div>
-              <p className="text-3xl font-heading font-bold text-accent">$15M+</p>
-              <p className="text-sm text-primary-foreground/70">Volume Processed</p>
+              <p className="text-3xl font-heading font-bold text-accent">
+                $15M+
+              </p>
+              <p className="text-sm text-primary-foreground/70">
+                Volume Processed
+              </p>
             </div>
             <div>
-              <p className="text-3xl font-heading font-bold text-accent">100%</p>
-              <p className="text-sm text-primary-foreground/70">Audit Compliant</p>
+              <p className="text-3xl font-heading font-bold text-accent">
+                100%
+              </p>
+              <p className="text-sm text-primary-foreground/70">
+                Audit Compliant
+              </p>
             </div>
             <div>
               <p className="text-3xl font-heading font-bold text-accent">47</p>
@@ -258,15 +322,21 @@ const Login = () => {
             </div>
             <div>
               <h1 className="font-heading text-2xl font-bold">CryptoExec</h1>
-              <p className="text-sm text-muted-foreground">Execution Platform</p>
+              <p className="text-sm text-muted-foreground">
+                Execution Platform
+              </p>
             </div>
           </div>
 
           {isSignup ? (
             <>
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-heading font-bold text-foreground">Create Account</h2>
-                <p className="text-muted-foreground mt-2">Set up your first Super Admin account</p>
+                <h2 className="text-2xl font-heading font-bold text-foreground">
+                  Create Account
+                </h2>
+                <p className="text-muted-foreground mt-2">
+                  Set up your first Super Admin account
+                </p>
               </div>
 
               <form onSubmit={handleSignup} className="space-y-5">
@@ -277,12 +347,18 @@ const Login = () => {
                     type="text"
                     placeholder="John Smith"
                     value={signupData.fullName}
-                    onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                    className={`h-12 ${errors.fullName ? 'border-destructive' : ''}`}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, fullName: e.target.value })
+                    }
+                    className={`h-12 ${
+                      errors.fullName ? "border-destructive" : ""
+                    }`}
                     disabled={loading}
                   />
                   {errors.fullName && (
-                    <p className="text-sm text-destructive">{errors.fullName}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.fullName}
+                    </p>
                   )}
                 </div>
 
@@ -293,8 +369,12 @@ const Login = () => {
                     type="email"
                     placeholder="admin@company.com"
                     value={signupData.email}
-                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                    className={`h-12 ${errors.email ? 'border-destructive' : ''}`}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, email: e.target.value })
+                    }
+                    className={`h-12 ${
+                      errors.email ? "border-destructive" : ""
+                    }`}
                     disabled={loading}
                   />
                   {errors.email && (
@@ -309,7 +389,12 @@ const Login = () => {
                     type="tel"
                     placeholder="+971 50 123 4567"
                     value={signupData.mobileNumber}
-                    onChange={(e) => setSignupData({ ...signupData, mobileNumber: e.target.value })}
+                    onChange={(e) =>
+                      setSignupData({
+                        ...signupData,
+                        mobileNumber: e.target.value,
+                      })
+                    }
                     className="h-12"
                     disabled={loading}
                   />
@@ -323,8 +408,15 @@ const Login = () => {
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={signupData.password}
-                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                      className={`h-12 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                      onChange={(e) =>
+                        setSignupData({
+                          ...signupData,
+                          password: e.target.value,
+                        })
+                      }
+                      className={`h-12 pr-10 ${
+                        errors.password ? "border-destructive" : ""
+                      }`}
                       disabled={loading}
                     />
                     <button
@@ -332,15 +424,27 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
 
-                <Button type="submit" variant="gold" size="xl" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  variant="gold"
+                  size="xl"
+                  className="w-full"
+                  disabled={loading}
+                >
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -368,8 +472,12 @@ const Login = () => {
           ) : (
             <>
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-heading font-bold text-foreground">Welcome Back</h2>
-                <p className="text-muted-foreground mt-2">Sign in to access the execution platform</p>
+                <h2 className="text-2xl font-heading font-bold text-foreground">
+                  Welcome Back
+                </h2>
+                <p className="text-muted-foreground mt-2">
+                  Sign in to access the execution platform
+                </p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-6">
@@ -380,8 +488,12 @@ const Login = () => {
                     type="email"
                     placeholder="admin@bank.ae"
                     value={credentials.email}
-                    onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                    className={`h-12 ${errors.email ? 'border-destructive' : ''}`}
+                    onChange={(e) =>
+                      setCredentials({ ...credentials, email: e.target.value })
+                    }
+                    className={`h-12 ${
+                      errors.email ? "border-destructive" : ""
+                    }`}
                     disabled={loading}
                   />
                   {errors.email && (
@@ -392,7 +504,10 @@ const Login = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Password</Label>
-                    <a href="#" className="text-sm text-primary hover:underline">
+                    <a
+                      href="#"
+                      className="text-sm text-primary hover:underline"
+                    >
                       Forgot password?
                     </a>
                   </div>
@@ -402,8 +517,15 @@ const Login = () => {
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={credentials.password}
-                      onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                      className={`h-12 pr-10 ${errors.password ? 'border-destructive' : ''}`}
+                      onChange={(e) =>
+                        setCredentials({
+                          ...credentials,
+                          password: e.target.value,
+                        })
+                      }
+                      className={`h-12 pr-10 ${
+                        errors.password ? "border-destructive" : ""
+                      }`}
                       disabled={loading}
                     />
                     <button
@@ -411,15 +533,27 @@ const Login = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="text-sm text-destructive">{errors.password}</p>
+                    <p className="text-sm text-destructive">
+                      {errors.password}
+                    </p>
                   )}
                 </div>
 
-                <Button type="submit" variant="gold" size="xl" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  variant="gold"
+                  size="xl"
+                  className="w-full"
+                  disabled={loading}
+                >
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -438,30 +572,41 @@ const Login = () => {
               <div className="mt-6 p-4 bg-muted/50 border border-border rounded-xl">
                 <div className="flex items-start gap-2 mb-3">
                   <Info className="w-4 h-4 text-primary mt-0.5" />
-                  <p className="text-sm font-medium text-foreground">Demo Credentials</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Demo Credentials
+                  </p>
                 </div>
                 <div className="space-y-2 text-xs text-muted-foreground">
                   <div className="flex justify-between">
                     <span>Super Admin:</span>
-                    <span className="font-mono">admin@cryptoexec.com / Admin@123</span>
+                    <span className="font-mono">
+                      admin@cryptoexec.com / Admin@123
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Initiator:</span>
-                    <span className="font-mono">initiator@bank.ae / Initiator@123</span>
+                    <span className="font-mono">
+                      initiator@bank.ae / Initiator@123
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Approver:</span>
-                    <span className="font-mono">approver@bank.ae / Approver@123</span>
+                    <span className="font-mono">
+                      approver@bank.ae / Approver@123
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span>Auditor:</span>
-                    <span className="font-mono">auditor@bank.ae / Auditor@123</span>
+                    <span className="font-mono">
+                      auditor@bank.ae / Auditor@123
+                    </span>
                   </div>
                 </div>
               </div>
 
               <p className="text-center text-sm text-muted-foreground mt-4">
-                Protected by enterprise-grade security.<br />
+                Protected by enterprise-grade security.
+                <br />
                 Contact your administrator for access.
               </p>
             </>
@@ -474,7 +619,7 @@ const Login = () => {
 
 // 2FA Verification Component
 function TwoFactorVerification({ onBack }: { onBack: () => void }) {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const { verify2FA } = useAuth();
   const { toast } = useToast();
@@ -482,7 +627,7 @@ function TwoFactorVerification({ onBack }: { onBack: () => void }) {
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (code.length !== 6) {
       toast({
         title: "Invalid Code",
@@ -493,9 +638,9 @@ function TwoFactorVerification({ onBack }: { onBack: () => void }) {
     }
 
     setLoading(true);
-    
+
     const { error } = await verify2FA(code);
-    
+
     if (error) {
       toast({
         title: "Verification Failed",
@@ -510,8 +655,8 @@ function TwoFactorVerification({ onBack }: { onBack: () => void }) {
       title: "Welcome Back",
       description: "Successfully verified and logged in.",
     });
-    
-    navigate('/');
+
+    navigate("/");
   };
 
   return (
@@ -525,8 +670,12 @@ function TwoFactorVerification({ onBack }: { onBack: () => void }) {
           <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h2 className="text-2xl font-heading font-bold text-foreground">Two-Factor Authentication</h2>
-          <p className="text-muted-foreground mt-2">Enter the 6-digit code from your authenticator app</p>
+          <h2 className="text-2xl font-heading font-bold text-foreground">
+            Two-Factor Authentication
+          </h2>
+          <p className="text-muted-foreground mt-2">
+            Enter the 6-digit code from your authenticator app
+          </p>
         </div>
 
         <form onSubmit={handleVerify} className="space-y-6">
@@ -537,25 +686,39 @@ function TwoFactorVerification({ onBack }: { onBack: () => void }) {
               type="text"
               placeholder="000000"
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) =>
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
               className="h-14 text-center text-2xl font-mono tracking-[0.5em]"
               maxLength={6}
               disabled={loading}
             />
           </div>
 
-          <Button type="submit" variant="gold" size="xl" className="w-full" disabled={loading || code.length !== 6}>
+          <Button
+            type="submit"
+            variant="gold"
+            size="xl"
+            className="w-full"
+            disabled={loading || code.length !== 6}
+          >
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Verifying...
               </>
             ) : (
-              'Verify & Continue'
+              "Verify & Continue"
             )}
           </Button>
 
-          <Button type="button" variant="ghost" className="w-full" onClick={onBack} disabled={loading}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={onBack}
+            disabled={loading}
+          >
             Back to Login
           </Button>
         </form>
